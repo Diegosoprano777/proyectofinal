@@ -1,0 +1,42 @@
+<router-outlet />
+
+<!-- Notificaciones globales -->
+<div class="pointer-events-none fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-3" aria-live="polite">
+  @for (t of toast.toasts(); track t.id) {
+    <div
+      class="toast pointer-events-auto flex animate-toast-in items-start gap-3 rounded-2xl border bg-white/95 p-4 shadow-2xl backdrop-blur"
+      [class.border-emerald-200]="t.tipo === 'exito'"
+      [class.shadow-emerald-900/10]="t.tipo === 'exito'"
+      [class.border-rose-200]="t.tipo === 'error'"
+      [class.shadow-rose-900/10]="t.tipo === 'error'"
+      [class.border-sky-200]="t.tipo === 'info'"
+      [attr.data-tipo]="t.tipo"
+      role="status"
+    >
+      <span
+        class="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-lg"
+        [class.bg-emerald-100]="t.tipo === 'exito'"
+        [class.bg-rose-100]="t.tipo === 'error'"
+        [class.bg-sky-100]="t.tipo === 'info'"
+      >
+        @switch (t.tipo) {
+          @case ('exito') { ✅ }
+          @case ('error') { ⚠️ }
+          @default { 🥑 }
+        }
+      </span>
+      <div class="min-w-0 flex-1">
+        <p class="text-sm font-semibold text-stone-900">{{ t.titulo }}</p>
+        @if (t.mensaje) {
+          <p class="mt-0.5 text-sm text-stone-600">{{ t.mensaje }}</p>
+        }
+      </div>
+      <button
+        type="button"
+        class="rounded-lg p-1 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700"
+        (click)="toast.cerrar(t.id)"
+        aria-label="Cerrar notificación"
+      >✕</button>
+    </div>
+  }
+</div>

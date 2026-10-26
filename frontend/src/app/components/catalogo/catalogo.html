@@ -1,0 +1,388 @@
+<div class="min-h-screen pb-16">
+  <!-- ============ Barra superior ============ -->
+  <header class="sticky top-0 z-30 border-b border-emerald-900/10 bg-white/75 backdrop-blur-xl">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+      <div class="flex items-center gap-3">
+        <app-logo class="h-10 w-10" />
+        <div>
+          <p class="font-display text-lg leading-none font-bold text-emerald-950">AvoLote</p>
+          <p class="text-xs text-stone-500">Hass y Papelillo</p>
+        </div>
+      </div>
+
+      @if (usuario(); as u) {
+        <div class="flex items-center gap-3">
+          <div class="hidden text-right sm:block">
+            <p id="topbar-nombre" class="text-sm font-semibold text-stone-800">{{ u.nombre }}</p>
+            <p class="text-xs text-stone-500">{{ u.correo }}</p>
+          </div>
+          <span
+            id="topbar-rol"
+            class="rounded-full px-3 py-1 text-xs font-bold tracking-wider ring-1 ring-inset"
+            [class]="u.rol === 'ADMIN' ? 'bg-emerald-900 text-lime-200 ring-emerald-950' : 'bg-aguacate-100 text-aguacate-800 ring-aguacate-600/20'"
+          >{{ u.rol === 'ADMIN' ? '👨‍🌾 ADMIN' : '🛒 CLIENTE' }}</span>
+          <button
+            id="btn-apartados" type="button" (click)="abrirApartados()"
+            class="relative inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100"
+          >
+            📦 <span class="hidden md:inline">{{ u.rol === 'ADMIN' ? 'Apartados' : 'Mis apartados' }}</span>
+            @if (apartados().length) {
+              <span id="badge-apartados" class="grid h-5 min-w-5 place-items-center rounded-full bg-emerald-600 px-1.5 text-[11px] font-bold text-white">{{ apartados().length }}</span>
+            }
+          </button>
+          <div class="grid h-10 w-10 place-items-center rounded-full bg-linear-to-br from-emerald-500 to-aguacate-600 text-sm font-bold text-white shadow-md">
+            {{ iniciales() }}
+          </div>
+          <button
+            id="btn-logout" type="button" (click)="cerrarSesion()"
+            class="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
+          >Salir</button>
+        </div>
+      }
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-4 pt-8 sm:px-6">
+    <!-- ============ Encabezado + métricas ============ -->
+    <section class="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <div class="animate-fade-up">
+        <p class="inline-flex items-center gap-2 text-xs font-semibold tracking-widest text-emerald-700 uppercase">
+          <span class="h-2 w-2 animate-pulse rounded-full bg-emerald-500"></span> Inventario en vivo
+        </p>
+        <h1 class="mt-2 font-display text-4xl font-bold tracking-tight text-emerald-950 sm:text-5xl">Catálogo de Lotes</h1>
+        <p class="mt-2 max-w-xl text-stone-500">Aguacate Hass y Papelillo clasificado por maduración. Aparta los kilos que necesitas y el stock se descuenta al instante.</p>
+      </div>
+      <div class="grid grid-cols-3 gap-3 animate-fade-up">
+        <div class="rounded-2xl border border-emerald-900/10 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
+          <p class="text-[11px] font-semibold tracking-wider text-stone-400 uppercase">Lotes</p>
+          <p id="stat-lotes" class="font-display text-2xl font-bold text-emerald-900">{{ conteos().TODOS }}</p>
+        </div>
+        <div class="rounded-2xl border border-emerald-900/10 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
+          <p class="text-[11px] font-semibold tracking-wider text-stone-400 uppercase">Kg disponibles</p>
+          <p id="stat-kg" class="font-display text-2xl font-bold text-emerald-900">{{ totalKg() | number: '1.0-1' }}</p>
+        </div>
+        <div class="rounded-2xl border border-emerald-900/10 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
+          <p class="text-[11px] font-semibold tracking-wider text-stone-400 uppercase">Precio prom.</p>
+          <p class="font-display text-2xl font-bold text-emerald-900">{{ precioPromedio() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Panel Rápido Admin ============ -->
+    @if (usuario()?.rol === 'ADMIN') {
+      <section id="panel-admin" class="mb-8 overflow-hidden rounded-3xl bg-linear-to-br from-emerald-900 via-emerald-950 to-stone-950 text-white shadow-2xl shadow-emerald-950/20 animate-fade-up">
+        <button id="btn-toggle-admin" type="button" (click)="panelAbierto.set(!panelAbierto())" class="flex w-full items-center justify-between gap-4 p-5 text-left sm:px-7">
+          <div class="flex items-center gap-4">
+            <span class="grid h-12 w-12 place-items-center rounded-2xl bg-white/10 text-2xl ring-1 ring-white/15">👨‍🌾</span>
+            <div>
+              <p class="font-display text-lg font-semibold">Panel Rápido Admin</p>
+              <p class="text-sm text-emerald-100/70">Registra lotes nuevos o actualiza su estado de maduración</p>
+            </div>
+          </div>
+          <span class="grid h-9 w-9 place-items-center rounded-full bg-white/10 transition" [class.rotate-180]="panelAbierto()">▾</span>
+        </button>
+
+        @if (panelAbierto()) {
+          <div class="border-t border-white/10 p-5 sm:px-7 sm:pb-7">
+            <div class="mb-5 inline-flex rounded-xl bg-white/10 p-1">
+              <button id="tab-admin-nuevo" type="button" (click)="pestanaAdmin.set('nuevo')"
+                class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                [class]="pestanaAdmin() === 'nuevo' ? 'bg-lime-300 text-emerald-950' : 'text-emerald-100/80 hover:text-white'">➕ Nuevo lote</button>
+              <button id="tab-admin-estado" type="button" (click)="pestanaAdmin.set('estado')"
+                class="rounded-lg px-4 py-2 text-sm font-semibold transition"
+                [class]="pestanaAdmin() === 'estado' ? 'bg-lime-300 text-emerald-950' : 'text-emerald-100/80 hover:text-white'">🔄 Cambiar maduración</button>
+            </div>
+
+            @if (pestanaAdmin() === 'nuevo') {
+              <form id="form-nuevo-lote" (ngSubmit)="crearLote()" #fl="ngForm" class="grid animate-fade-up gap-4 sm:grid-cols-2 lg:grid-cols-6">
+                <div class="lg:col-span-2">
+                  <label for="nl-codigo" class="etiqueta-oscura">Código de lote</label>
+                  <input id="nl-codigo" name="codigo_lote" class="campo-oscuro uppercase" placeholder="HASS-V-003" required [(ngModel)]="nuevoLote.codigo_lote" />
+                </div>
+                <div class="lg:col-span-2">
+                  <label for="nl-variedad" class="etiqueta-oscura">Variedad</label>
+                  <select id="nl-variedad" name="variedad" class="campo-oscuro" required [(ngModel)]="nuevoLote.variedad">
+                    @for (v of variedadesAdmin; track v) {
+                      <option [value]="v">{{ v }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="lg:col-span-2">
+                  <label for="nl-estado" class="etiqueta-oscura">Maduración</label>
+                  <select id="nl-estado" name="estado_maduracion" class="campo-oscuro" [(ngModel)]="nuevoLote.estado_maduracion">
+                    @for (e of listaEstados; track e) {
+                      <option [value]="e">{{ estados[e].icono }} {{ estados[e].etiqueta }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="lg:col-span-2">
+                  <label for="nl-precio" class="etiqueta-oscura">Precio por kg (COP)</label>
+                  <input id="nl-precio" name="precio_kg" type="number" min="1" class="campo-oscuro" required [(ngModel)]="nuevoLote.precio_kg" />
+                </div>
+                <div>
+                  <label for="nl-stock" class="etiqueta-oscura">Stock (kg)</label>
+                  <input id="nl-stock" name="stock_kg" type="number" min="0" class="campo-oscuro" required [(ngModel)]="nuevoLote.stock_kg" />
+                </div>
+                <div>
+                  <label for="nl-dias" class="etiqueta-oscura">Días consumo</label>
+                  <input id="nl-dias" name="dias_consumo" type="number" min="0" class="campo-oscuro" required [(ngModel)]="nuevoLote.dias_consumo" />
+                </div>
+                <div class="sm:col-span-2 lg:col-span-4">
+                  <label for="nl-desc" class="etiqueta-oscura">Descripción</label>
+                  <input id="nl-desc" name="descripcion" class="campo-oscuro" placeholder="Finca, calibre, destino…" [(ngModel)]="nuevoLote.descripcion" />
+                </div>
+                <div class="flex items-end sm:col-span-2 lg:col-span-2">
+                  <button id="btn-crear-lote" type="submit" [disabled]="fl.invalid || guardando()"
+                    class="w-full rounded-xl bg-lime-300 px-5 py-2.5 text-sm font-bold text-emerald-950 shadow-lg shadow-lime-300/20 transition hover:-translate-y-0.5 hover:bg-lime-200 disabled:cursor-not-allowed disabled:opacity-50">
+                    {{ guardando() ? 'Guardando…' : 'Registrar lote' }}
+                  </button>
+                </div>
+              </form>
+            } @else {
+              <form id="form-cambiar-estado" (ngSubmit)="cambiarEstado()" class="grid animate-fade-up gap-4 lg:grid-cols-[1fr_auto_auto] lg:items-end">
+                <div>
+                  <label for="ce-lote" class="etiqueta-oscura">Lote</label>
+                  <select id="ce-lote" name="lote" class="campo-oscuro" required [ngModel]="loteAEditar()" (ngModelChange)="loteAEditar.set($event)">
+                    <option [ngValue]="null" disabled>Selecciona un lote…</option>
+                    @for (l of lotes(); track l.id) {
+                      <option [ngValue]="l.id">{{ l.codigo_lote }} · {{ estados[l.estado_maduracion].icono }} {{ estados[l.estado_maduracion].etiqueta }} · {{ l.stock_kg }} kg</option>
+                    }
+                  </select>
+                </div>
+                <div>
+                  <span class="etiqueta-oscura">Nuevo estado</span>
+                  <div class="flex gap-2">
+                    @for (e of listaEstados; track e) {
+                      <button type="button" [id]="'ce-estado-' + e" (click)="nuevoEstado.set(e)"
+                        class="rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition"
+                        [class]="nuevoEstado() === e ? 'border-lime-300 bg-lime-300 text-emerald-950' : 'border-white/15 bg-white/5 text-emerald-50 hover:bg-white/10'">
+                        {{ estados[e].icono }} {{ estados[e].etiqueta }}
+                      </button>
+                    }
+                  </div>
+                </div>
+                <button id="btn-cambiar-estado" type="submit" [disabled]="loteAEditar() === null || guardando()"
+                  class="rounded-xl bg-lime-300 px-5 py-2.5 text-sm font-bold text-emerald-950 shadow-lg shadow-lime-300/20 transition hover:-translate-y-0.5 hover:bg-lime-200 disabled:cursor-not-allowed disabled:opacity-50">
+                  {{ guardando() ? 'Guardando…' : 'Actualizar' }}
+                </button>
+              </form>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    <!-- ============ Filtro por variedad ============ -->
+    <div class="mb-4 flex flex-wrap items-center gap-3" role="group" aria-label="Filtrar por variedad">
+      <button type="button" id="variedad-TODAS" (click)="filtroVariedad.set('TODAS')"
+        class="inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5"
+        [class]="filtroVariedad() === 'TODAS' ? 'border-emerald-900 bg-emerald-900 text-white shadow-lg shadow-emerald-900/25' : 'border-stone-200 bg-white text-stone-600 hover:border-emerald-300'">
+        🥑 Todas las variedades
+      </button>
+      @for (v of variedades(); track v) {
+        <button type="button" [id]="'variedad-' + v" (click)="filtroVariedad.set(v)"
+          class="inline-flex items-center gap-2.5 rounded-2xl border py-1.5 pr-4 pl-1.5 text-sm font-semibold transition hover:-translate-y-0.5"
+          [class]="filtroVariedad() === v ? 'border-emerald-900 bg-emerald-900 text-white shadow-lg shadow-emerald-900/25' : 'border-stone-200 bg-white text-stone-700 hover:border-emerald-300'">
+          <img [src]="imagenLote(v, 'MADURO')" [alt]="'Aguacate ' + v" class="h-8 w-8 rounded-xl object-cover" />
+          {{ v }}
+        </button>
+      }
+    </div>
+
+    <!-- ============ Filtro por maduración ============ -->
+    <nav class="mb-6 flex flex-wrap items-center gap-2" aria-label="Filtrar por maduración">
+      @for (f of filtros; track f.valor) {
+        <button
+          type="button" [id]="'filtro-' + f.valor" (click)="filtro.set(f.valor)"
+          [attr.aria-pressed]="filtro() === f.valor"
+          class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition hover:-translate-y-0.5"
+          [class]="filtro() === f.valor
+            ? (f.valor === 'TODOS' ? 'border-emerald-700 bg-emerald-700 text-white shadow-lg shadow-emerald-700/30' : estados[f.valor].activo)
+            : 'border-stone-200 bg-white text-stone-600 hover:border-emerald-300 hover:text-emerald-800'"
+        >
+          <span>{{ f.icono }}</span> {{ f.etiqueta }}
+          <span class="rounded-full px-2 py-0.5 text-xs" [class]="filtro() === f.valor ? 'bg-white/20' : 'bg-stone-100 text-stone-500'">{{ conteos()[f.valor] }}</span>
+        </button>
+      }
+    </nav>
+
+    <!-- ============ Grid de lotes ============ -->
+    @if (cargando()) {
+      <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+          <div class="h-96 animate-pulse rounded-3xl border border-stone-200 bg-white/70"></div>
+        }
+      </div>
+    } @else if (error()) {
+      <div id="catalogo-error" class="rounded-3xl border border-rose-200 bg-rose-50 p-10 text-center">
+        <p class="text-4xl">🔌</p>
+        <p class="mt-3 font-semibold text-rose-800">{{ error() }}</p>
+        <button type="button" class="btn-primario mt-5" (click)="cargar()">Reintentar</button>
+      </div>
+    } @else {
+      <div id="grid-lotes" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        @for (lote of lotesFiltrados(); track lote.id; let i = $index) {
+          <article
+            [id]="'lote-' + lote.id"
+            [attr.data-estado]="lote.estado_maduracion"
+            class="lote-card group relative flex animate-fade-up flex-col overflow-hidden rounded-3xl border border-emerald-900/10 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-900/10"
+            [class.ring-4]="recienActualizado() === lote.id"
+            [class.ring-emerald-400/60]="recienActualizado() === lote.id"
+            [style.animation-delay.ms]="i * 50"
+          >
+            <!-- Foto del producto -->
+            <div class="relative h-48 overflow-hidden bg-stone-100">
+              <img
+                [src]="imagenLote(lote.variedad, lote.estado_maduracion)"
+                [alt]="'Aguacate ' + lote.variedad + ' ' + estados[lote.estado_maduracion].etiqueta"
+                loading="lazy"
+                class="lote-foto h-full w-full object-cover transition duration-700 group-hover:scale-105"
+              />
+              <div class="absolute inset-0 bg-linear-to-t from-black/45 via-transparent to-transparent"></div>
+              <span class="badge-estado absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-md ring-1 ring-inset" [class]="estados[lote.estado_maduracion].badge">
+                {{ estados[lote.estado_maduracion].icono }} {{ estados[lote.estado_maduracion].etiqueta }}
+              </span>
+              <span class="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-emerald-900 shadow backdrop-blur">
+                {{ lote.variedad }}
+              </span>
+            </div>
+            <div class="h-1.5" [class]="estados[lote.estado_maduracion].barra"></div>
+
+            <div class="flex flex-1 flex-col gap-5 p-6">
+              <div>
+                <p class="text-[11px] font-semibold tracking-widest text-stone-400 uppercase">Lote</p>
+                <h3 class="font-display text-xl font-bold text-emerald-950">{{ lote.codigo_lote }}</h3>
+              </div>
+
+              @if (lote.descripcion) {
+                <p class="line-clamp-2 text-sm text-stone-600">{{ lote.descripcion }}</p>
+              }
+
+              <dl class="grid grid-cols-2 gap-3">
+                <div class="rounded-2xl bg-emerald-50/70 p-3">
+                  <dt class="text-[11px] font-semibold tracking-wider text-emerald-700/70 uppercase">Precio / kg</dt>
+                  <dd class="font-display text-lg font-bold text-emerald-800">{{ lote.precio_kg | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+                </div>
+                <div class="rounded-2xl bg-stone-50 p-3">
+                  <dt class="text-[11px] font-semibold tracking-wider text-stone-500 uppercase">Consumo en</dt>
+                  <dd class="font-display text-lg font-bold text-stone-800">⏱ {{ lote.dias_consumo }} {{ lote.dias_consumo === 1 ? 'día' : 'días' }}</dd>
+                </div>
+              </dl>
+
+              <div>
+                <div class="mb-1.5 flex items-baseline justify-between">
+                  <span class="text-xs font-semibold tracking-wider text-stone-500 uppercase">Stock disponible</span>
+                  <span class="stock-valor font-display text-base font-bold" [class]="lote.stock_kg === 0 ? 'text-rose-600' : 'text-stone-800'">
+                    {{ lote.stock_kg | number: '1.0-2' }} kg
+                  </span>
+                </div>
+                <div class="h-2 overflow-hidden rounded-full bg-stone-100">
+                  <div class="h-full rounded-full transition-all duration-700" [class]="estados[lote.estado_maduracion].barra" [style.width.%]="(lote.stock_kg / stockMaximo()) * 100"></div>
+                </div>
+              </div>
+
+              <div class="mt-auto border-t border-dashed border-stone-200 pt-5">
+                @if (lote.stock_kg > 0) {
+                  <label [for]="'cantidad-' + lote.id" class="etiqueta">Kilos a llevar</label>
+                  <div class="flex gap-2">
+                    <div class="relative flex-1">
+                      <input
+                        [id]="'cantidad-' + lote.id" type="number" min="0.5" step="0.5" [max]="lote.stock_kg"
+                        class="campo pr-10 font-semibold"
+                        [ngModel]="cantidad(lote)" (ngModelChange)="setCantidad(lote.id, $event)"
+                      />
+                      <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-stone-400">kg</span>
+                    </div>
+                    <button
+                      type="button" [id]="'btn-apartar-' + lote.id" (click)="apartar(lote)" [disabled]="!puedeApartar(lote)"
+                      class="btn-primario shrink-0"
+                    >
+                      @if (apartando() === lote.id) {
+                        <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span> Apartando…
+                      } @else {
+                        🥑 Apartar Aguacates
+                      }
+                    </button>
+                  </div>
+                  @if (cantidad(lote) > lote.stock_kg) {
+                    <p class="mt-2 text-xs font-medium text-rose-600">Solo hay {{ lote.stock_kg }} kg disponibles.</p>
+                  } @else if (cantidad(lote) > 0) {
+                    <p class="mt-2 text-xs text-stone-500">Total estimado: <span class="font-semibold text-emerald-800">{{ cantidad(lote) * lote.precio_kg | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</span></p>
+                  }
+                } @else {
+                  <p class="rounded-xl bg-rose-50 py-3 text-center text-sm font-semibold text-rose-700">Lote agotado</p>
+                }
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <div class="col-span-full rounded-3xl border border-dashed border-stone-300 bg-white/60 p-12 text-center">
+            <p class="text-5xl">🥑</p>
+            <p class="mt-3 font-display text-lg font-semibold text-stone-700">No hay lotes en este estado</p>
+            <p class="text-sm text-stone-500">Prueba con otro filtro de maduración.</p>
+          </div>
+        }
+      </div>
+    }
+  </main>
+</div>
+
+<!-- ============ Panel lateral de apartados ============ -->
+@if (drawerAbierto()) {
+  <div class="fixed inset-0 z-40 bg-emerald-950/40 backdrop-blur-sm" (click)="drawerAbierto.set(false)" aria-hidden="true"></div>
+  <aside id="drawer-apartados" class="fixed inset-y-0 right-0 z-50 flex w-full max-w-md animate-toast-in flex-col bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="titulo-apartados">
+    <div class="flex items-center justify-between border-b border-stone-100 p-5">
+      <div>
+        <h2 id="titulo-apartados" class="font-display text-xl font-bold text-emerald-950">
+          {{ usuario()?.rol === 'ADMIN' ? '📦 Todos los apartados' : '📦 Mis apartados' }}
+        </h2>
+        <p class="text-sm text-stone-500">{{ apartados().length }} registro(s) · {{ kgApartados() | number: '1.0-2' }} kg</p>
+      </div>
+      <button type="button" id="btn-cerrar-apartados" (click)="drawerAbierto.set(false)" class="rounded-xl p-2 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="flex-1 space-y-3 overflow-y-auto p-5">
+      @if (cargandoApartados() && !apartados().length) {
+        @for (i of [1, 2, 3]; track i) {
+          <div class="h-20 animate-pulse rounded-2xl bg-stone-100"></div>
+        }
+      }
+      @for (a of apartados(); track a.id) {
+        <div class="apartado-item flex items-center gap-4 rounded-2xl border border-stone-100 bg-stone-50/60 p-3 animate-fade-up">
+          <img [src]="imagenLote(a.variedad, a.estado_maduracion)" [alt]="'Aguacate ' + a.variedad" class="h-16 w-16 shrink-0 rounded-xl object-cover" />
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-2">
+              <p class="truncate font-semibold text-stone-800">{{ a.codigo_lote }}</p>
+              <p class="shrink-0 font-display font-bold text-emerald-800">{{ a.total | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</p>
+            </div>
+            <p class="text-sm text-stone-500">
+              {{ a.cantidad_kg | number: '1.0-2' }} kg × {{ a.precio_kg | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+              · {{ estados[a.estado_maduracion].icono }} {{ a.variedad }}
+            </p>
+            <p class="text-xs text-stone-400">
+              {{ a.fecha | date: 'd MMM y, h:mm a' }}
+              @if (usuario()?.rol === 'ADMIN') { · <span class="font-medium text-stone-600">{{ a.usuario_nombre }}</span> }
+            </p>
+          </div>
+        </div>
+      } @empty {
+        @if (!cargandoApartados()) {
+          <div class="py-16 text-center">
+            <p class="text-5xl">🧺</p>
+            <p class="mt-3 font-semibold text-stone-700">Aún no hay apartados</p>
+            <p class="text-sm text-stone-500">Aparta kilos desde cualquier lote del catálogo.</p>
+          </div>
+        }
+      }
+    </div>
+
+    @if (apartados().length) {
+      <div class="border-t border-stone-100 bg-emerald-50/60 p-5">
+        <div class="flex items-baseline justify-between">
+          <span class="text-sm font-semibold text-stone-600">Total apartado</span>
+          <span id="total-apartados" class="font-display text-2xl font-bold text-emerald-900">{{ totalApartados() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</span>
+        </div>
+      </div>
+    }
+  </aside>
+}
