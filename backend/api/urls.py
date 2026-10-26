@@ -10,4 +10,5 @@ urlpatterns = [
     re_path(r'^catalogo/(?P<pk>\d+)/?$', views.CatalogoDetailView.as_view(), name='catalogo-detalle'),
     re_path(r'^catalogo/(?P<pk>\d+)/apartar/?$', views.ApartarLoteView.as_view(), name='catalogo-apartar'),
     re_path(r'^apartados/?$', views.ApartadosListView.as_view(), name='apartados'),
+    re_path(r'^apartados/(?P<pk>\d+)/estado/?$', views.CambiarEstadoApartadoView.as_view(), name='apartados-estado'),
 ]

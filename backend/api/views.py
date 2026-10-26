@@ -10,6 +10,7 @@ from .security import EsAdmin, EstaAutenticado, generar_token
 from .serializers import (
     ApartadoSerializer,
     ApartarSerializer,
+    CambiarEstadoApartadoSerializer,
     LoginSerializer,
     ProductoLoteSerializer,
     UsuarioSerializer,
@@ -163,3 +164,58 @@ class ApartadosListView(generics.ListAPIView):
         if not self.request.user.es_admin:
             queryset = queryset.filter(usuario=self.request.user)
         return queryset
+
+
+class CambiarEstadoApartadoView(APIView):
+    """
+    PATCH /api/apartados/<pk>/estado  body: {"estado": "ENTREGADO" | "CANCELADO"}
+    - ADMIN: puede entregar o cancelar cualquier apartado PENDIENTE.
+    - CLIENTE: solo puede cancelar sus propios apartados PENDIENTES.
+    - CANCELADO devuelve los kg al stock del lote.
+    """
+
+    permission_classes = [EstaAutenticado]
+
+    def patch(self, request, pk):
+        serializer = CambiarEstadoApartadoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        nuevo_estado = serializer.validated_data['estado']
+        usuario = request.user
+
+        with transaction.atomic():
+            apartado = get_object_or_404(
+                Apartado.objects.select_for_update().select_related('usuario', 'lote'), pk=pk
+            )
+
+            if not usuario.es_admin:
+                if apartado.usuario_id != usuario.id:
+                    return Response({'detail': 'No puedes modificar apartados de otro usuario.'},
+                                    status=status.HTTP_403_FORBIDDEN)
+                if nuevo_estado != Apartado.Estado.CANCELADO:
+                    return Response({'detail': 'Solo el administrador puede marcar un apartado como entregado.'},
+                                    status=status.HTTP_403_FORBIDDEN)
+
+            if apartado.estado != Apartado.Estado.PENDIENTE:
+                return Response(
+                    {'detail': f'El apartado ya está {apartado.get_estado_display().lower()} y no se puede modificar.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            lote = ProductoLote.objects.select_for_update().get(pk=apartado.lote_id)
+            if nuevo_estado == Apartado.Estado.CANCELADO:
+                lote.stock_kg += apartado.cantidad_kg  # Devolver los kilos al inventario
+                lote.save()
+
+            apartado.estado = nuevo_estado
+            apartado.save()
+            apartado.lote = lote
+
+        mensajes = {
+            Apartado.Estado.ENTREGADO: f'Apartado de {apartado.cantidad_kg} kg de {lote.codigo_lote} marcado como entregado.',
+            Apartado.Estado.CANCELADO: f'Apartado cancelado: se devolvieron {apartado.cantidad_kg} kg al lote {lote.codigo_lote}.',
+        }
+        return Response({
+            'mensaje': mensajes[nuevo_estado],
+            'apartado': ApartadoSerializer(apartado).data,
+            'lote': ProductoLoteSerializer(lote).data,
+        })

@@ -60,5 +60,9 @@ export interface Apartado {
   cantidad_kg: number;
   precio_kg: number;
   total: number;
+  estado: EstadoApartado;
   fecha: string;
+  fecha_actualizacion?: string;
 }
+
+export type EstadoApartado = 'PENDIENTE' | 'ENTREGADO' | 'CANCELADO';

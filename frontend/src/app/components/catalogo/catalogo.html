@@ -360,9 +360,40 @@
               · {{ estados[a.estado_maduracion].icono }} {{ a.variedad }}
             </p>
             <p class="text-xs text-stone-400">
-              {{ a.fecha | date: 'd MMM y, h:mm a' }}
+              📅 {{ a.fecha | date: 'd MMM y, h:mm a' }}
               @if (usuario()?.rol === 'ADMIN') { · <span class="font-medium text-stone-600">{{ a.usuario_nombre }}</span> }
             </p>
+            <div class="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-stone-200/60 pt-2">
+              <span
+                class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-bold tracking-wide uppercase"
+                [class]="a.estado === 'ENTREGADO' ? 'bg-emerald-100 text-emerald-800' : (a.estado === 'CANCELADO' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800')"
+              >
+                @if (a.estado === 'ENTREGADO') { ✓ Entregado }
+                @else if (a.estado === 'CANCELADO') { ✕ Cancelado }
+                @else { ⏳ Pendiente }
+              </span>
+
+              @if (a.estado === 'PENDIENTE') {
+                <div class="flex items-center gap-1.5">
+                  @if (usuario()?.rol === 'ADMIN') {
+                    <button
+                      type="button"
+                      (click)="cambiarEstadoApartado(a, 'ENTREGADO')"
+                      class="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white shadow transition hover:bg-emerald-700"
+                    >
+                      ✓ Entregar
+                    </button>
+                  }
+                  <button
+                    type="button"
+                    (click)="cambiarEstadoApartado(a, 'CANCELADO')"
+                    class="rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              }
+            </div>
           </div>
         </div>
       } @empty {

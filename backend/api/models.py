@@ -69,12 +69,19 @@ class ProductoLote(models.Model):
 class Apartado(models.Model):
     """Registro de cada apartado (reserva) que descuenta stock de un lote."""
 
+    class Estado(models.TextChoices):
+        PENDIENTE = 'PENDIENTE', 'Pendiente'
+        ENTREGADO = 'ENTREGADO', 'Entregado'
+        CANCELADO = 'CANCELADO', 'Cancelado'
+
     usuario = models.ForeignKey(UsuarioPersonalizado, on_delete=models.CASCADE, related_name='apartados')
     lote = models.ForeignKey(ProductoLote, on_delete=models.CASCADE, related_name='apartados')
     cantidad_kg = models.DecimalField(max_digits=10, decimal_places=2)
     precio_kg = models.DecimalField(max_digits=10, decimal_places=2, help_text='Precio al momento de apartar')
     total = models.DecimalField(max_digits=12, decimal_places=2)
+    estado = models.CharField(max_length=10, choices=Estado.choices, default=Estado.PENDIENTE)
     fecha = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = 'Apartado'

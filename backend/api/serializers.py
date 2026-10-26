@@ -73,6 +73,10 @@ class ApartadoSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'lote', 'codigo_lote', 'variedad', 'estado_maduracion',
             'usuario', 'usuario_nombre', 'usuario_correo',
-            'cantidad_kg', 'precio_kg', 'total', 'fecha',
+            'cantidad_kg', 'precio_kg', 'total', 'estado', 'fecha', 'fecha_actualizacion',
         ]
         read_only_fields = fields
+
+
+class CambiarEstadoApartadoSerializer(serializers.Serializer):
+    estado = serializers.ChoiceField(choices=[Apartado.Estado.ENTREGADO, Apartado.Estado.CANCELADO])

@@ -244,6 +244,27 @@ export class CatalogoComponent implements OnInit {
     });
   }
 
+  cambiarEstadoApartado(apartado: Apartado, nuevoEstado: 'ENTREGADO' | 'CANCELADO'): void {
+    this.catalogo.cambiarEstadoApartado(apartado.id, nuevoEstado).subscribe({
+      next: (res) => {
+        // Actualizar el apartado en la lista
+        this.apartados.update((as) => as.map((a) => (a.id === res.apartado.id ? res.apartado : a)));
+        // Si se canceló y devolvió stock, actualizar el lote
+        if (res.lote) {
+          this.reemplazarLote(res.lote);
+          this.marcarActualizado(res.lote.id);
+        }
+        this.toast.exito(
+          nuevoEstado === 'ENTREGADO' ? 'Apartado entregado' : 'Apartado cancelado',
+          res.mensaje
+        );
+      },
+      error: (err) => {
+        this.toast.error('Error al actualizar apartado', mensajeDeError(err));
+      },
+    });
+  }
+
   cerrarSesion(): void {
     this.auth.logout();
     this.toast.info('Sesión cerrada', '¡Hasta pronto!');

@@ -54,4 +54,15 @@ export class CatalogoService {
   listarApartados(): Observable<Apartado[]> {
     return this.http.get<Apartado[]>(`${API_URL}/apartados`).pipe(map((as) => as.map(normalizarApartado)));
   }
+
+  /** PATCH /api/apartados/{id}/estado — ENTREGADO (solo admin) o CANCELADO (admin o dueño) */
+  cambiarEstadoApartado(id: number, estado: 'ENTREGADO' | 'CANCELADO'): Observable<{ mensaje: string; apartado: Apartado; lote: ProductoLote }> {
+    return this.http.patch<{ mensaje: string; apartado: Apartado; lote: ProductoLote }>(`${API_URL}/apartados/${id}/estado`, { estado }).pipe(
+      map((res) => ({
+        mensaje: res.mensaje,
+        apartado: normalizarApartado(res.apartado),
+        lote: normalizar(res.lote),
+      }))
+    );
+  }
 }
