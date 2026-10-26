@@ -1,7 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
-/** URL base del backend Django REST Framework. */
-export const API_URL = 'http://localhost:8000/api';
+/** URL base del backend Django REST Framework. Permite apuntar a Render dinámicamente si se configura en localStorage o window. */
+export const API_URL =
+  (typeof window !== 'undefined' && (window as any).__API_URL__) ||
+  (typeof localStorage !== 'undefined' && localStorage.getItem('API_URL')) ||
+  'http://localhost:8000/api';
 
 /** Convierte los errores de DRF en un mensaje legible para la UI. */
 export function mensajeDeError(err: unknown): string {
